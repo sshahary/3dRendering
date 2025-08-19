@@ -12,6 +12,11 @@ public:
     void line(const tmx::ivec2& a, const tmx::ivec2& b, const RGBA& c);
     const std::vector<RGBA>& pixels() const { return buf_; }
     int width() const { return w_; } int height() const { return h_; }
+
+    void setPixelUnsafe(int x, int y, const RGBA& c) {
+        if (x < 0 || y < 0 || x >= w_ || y >= h_) return;
+        buf_[y * w_ + x] = c;
+    }
 private:
     int w_, h_; std::vector<RGBA> buf_;
     void set(int x,int y,const RGBA& c);

@@ -6,6 +6,9 @@
 #include "pipeline3d.hpp"
 #include "viewport.hpp"
 #include "line_raster.hpp"
+#include "mesh_loader.hpp"
+
+enum class HiddenStyle { Off, Faint };
 
 class SketchApp {
 public:
@@ -18,6 +21,10 @@ public:
     void dolly(float factor);
     void resize(int W,int H);
     void setThreads(unsigned n){ threads_ = n? n : 1; }
+
+    void setFaces(const std::vector<PolyFace>& faces) { faces_ = &faces; }
+
+    void setHiddenStyle(HiddenStyle s) { hidden_style_ = s; }
 
 private:
     int W_, H_;
@@ -49,4 +56,16 @@ private:
 
     // threading
     unsigned threads_ = 0;
+
+    const std::vector<PolyFace>* faces_ = nullptr;
+
+    // Depth buffer for hidden-line
+    std::vector<float> zbuf_;   // size W_*H_, NDC depth in [0,1]; 1.0f = far
+    void clearDepth() { zbuf_.assign(W_*H_, 1.0f); }
+
+    // Build depth from faces (triangulated)
+    void buildDepth(); // implemented below
+
+    // Hidden-line style
+    HiddenStyle hidden_style_ = HiddenStyle::Off;
 };

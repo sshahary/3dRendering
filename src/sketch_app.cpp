@@ -166,3 +166,68 @@ const std::vector<uint32_t>& SketchApp::render(){
     }
     return out_;
 }
+
+// Edge function for triangle rasterization 
+static inline float edgeFunc(float x, float y, float x0, float y0, float x1, float y1){
+    return (y0 - y1)*x + (x1 - x0)*y + (x0*y1 - x1*y0);
+}
+
+// Fills depth for a single triangle given screen coords (xi,yi) and NDC z (0..1)
+void fillDepthTri(const tmx::ivec2& a, float za,
+                  const tmx::ivec2& b, float zb,
+                  const tmx::ivec2& c, float zc,
+                  int W, int H, std::vector<float>& Z)
+{
+    // Triangle bbox
+    int minx = std::max(0, std::min({a.x, b.x, c.x}));
+    int maxx = std::min(W-1, std::max({a.x, b.x, c.x}));
+    int miny = std::max(0, std::min({a.y, b.y, c.y}));
+    int maxy = std::min(H-1, std::max({a.y, b.y, c.y}));
+    if(minx>maxx || miny>maxy) return;
+
+    // Edge functions
+    float A01 = a.y - b.y, B01 = b.x - a.x, C01 = a.x*b.y - b.x*a.y;
+    float A12 = b.y - c.y, B12 = c.x - b.x, C12 = b.x*c.y - c.x*b.y;
+    float A20 = c.y - a.y, B20 = a.x - c.x, C20 = c.x*a.y - a.x*c.y;
+
+    // Denominator for barycentrics
+    float area = edgeFunc((float)a.x, (float)a.y, (float)b.x, (float)b.y, (float)c.x, (float)c.y);
+    if (area == 0.f) return;
+    float invArea = 1.0f / area;
+
+    // Iterate pixels
+    for(int y=miny; y<=maxy; ++y){
+        for(int x=minx; x<=maxx; ++x){
+            // Barycentrics via edge functions at pixel center
+            float w0 = (A12*x + B12*y + C12) * invArea;
+            float w1 = (A20*x + B20*y + C20) * invArea;
+            float w2 = (A01*x + B01*y + C01) * invArea;
+            if(w0 < 0 || w1 < 0 || w2 < 0) continue;
+
+            float z = w0*za + w1*zb + w2*zc; // NDC z interpolation is fine for visibility
+            int idx = y*W + x;
+            if(z < Z[idx]) Z[idx] = z;
+        }
+    }
+}
+
+// Build Z for all faces (fan-triangulate)
+void SketchApp::buildDepth(){
+    if(!faces_) return;
+    clearDepth();
+
+    // We already computed scr_[] and clip_[] in render(). clip_[i].z is NDC z (0..1)
+    for(const auto& f : *faces_){
+        if(f.indices.size() < 3) continue;
+        int i0 = f.indices[0];
+        const auto p0 = scr_[i0]; float z0 = clip_[i0].z;
+
+        for(size_t k=1; k+1 < f.indices.size(); ++k){
+            int i1 = f.indices[k];
+            int i2 = f.indices[k+1];
+            const auto p1 = scr_[i1]; float z1 = clip_[i1].z;
+            const auto p2 = scr_[i2]; float z2 = clip_[i2].z;
+            fillDepthTri(p0, z0, p1, z1, p2, z2, W_, H_, zbuf_);
+        }
+    }
+}

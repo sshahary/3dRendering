@@ -1,0 +1,14 @@
+#pragma once
+#include <vector>
+#include "tinymath.hpp"
+
+class Pipeline3D {
+public:
+    Pipeline3D(const tmx::mat4& M, const tmx::mat4& V, const tmx::mat4& P);
+    void setModel(const tmx::mat4& m);
+    void setView(const tmx::mat4& v);
+    void setProj(const tmx::mat4& p);
+    std::vector<tmx::vec4> transform(const std::vector<tmx::vec3>& vs) const;
+private:
+    tmx::mat4 M_, V_, P_;
+};

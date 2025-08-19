@@ -1,7 +1,10 @@
 #include "line_raster.hpp"
 #include <algorithm>
 LineRaster::LineRaster(int w,int h):w_(w),h_(h),buf_(w*h){} 
-void LineRaster::resize(int w,int h){ w_=w; h_=h; buf_.assign(w*h, RGBA{}); }
+void LineRaster::resize(int w,int h){
+    if(w==w_ && h==h_) return; // <-- keep existing buffer if size unchanged
+    w_=w; h_=h; buf_.assign(w*h, RGBA{});
+}
 void LineRaster::clear(const RGBA& c){ std::fill(buf_.begin(), buf_.end(), c); }
 void LineRaster::set(int x,int y,const RGBA& c){ if(x<0||y<0||x>=w_||y>=h_) return; buf_[y*w_+x]=c; }
 void LineRaster::line(const tmx::ivec2& a,const tmx::ivec2& b,const RGBA& c){

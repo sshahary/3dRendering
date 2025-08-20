@@ -82,8 +82,16 @@ inline mat4 lookAt(const vec3& eye, const vec3& target, const vec3& up) {
     r.m[14]=-(cz.x*eye.x + cz.y*eye.y + cz.z*eye.z);
     return r;
 }
-
-// simple symmetric perspective placeholder
-inline mat4 simplePerspective(){ mat4 p{}; p.m[0]=p.m[5]=p.m[10]=1.0f; p.m[11]=1.0f; return p; }
+// After simplePerspective(), add:
+inline mat4 perspective(float fovy_deg, float aspect, float n, float f){
+    const float s = std::tan(0.5f * fovy_deg * 3.1415926535f / 180.f);
+    mat4 m{};                        // OpenGL-style clip space, z in [-1,1]
+    m.m[0]  = 1.f / (aspect * s);
+    m.m[5]  = 1.f / s;
+    m.m[10] = (f + n) / (n - f);
+    m.m[11] = -1.f;
+    m.m[14] = (2.f * f * n) / (n - f);
+    return m;
+}
 
 }

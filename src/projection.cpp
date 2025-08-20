@@ -1,6 +1,12 @@
 #include "projection.hpp"
-Projection::Projection(){ M_=tmx::simplePerspective(); T_=Type::Perspective; }
-void Projection::setPerspective(float /*fov*/, float /*aspect*/, float /*n*/, float /*f*/){ M_=tmx::simplePerspective(); T_=Type::Perspective; }
+Projection::Projection(){
+    M_ = tmx::perspective(60.f, 1.f, 0.1f, 1000.f);
+    T_ = Type::Perspective;
+}
+void Projection::setPerspective(float fov, float aspect, float n, float f){
+    M_ = tmx::perspective(fov, aspect, n, f);
+    T_ = Type::Perspective;
+}
 void Projection::setOrtho(float l,float r,float b,float t,float n,float f){
     tmx::mat4 m{};
     m.m[0]=2.f/(r-l); m.m[5]=2.f/(t-b); m.m[10]=2.f/(f-n);

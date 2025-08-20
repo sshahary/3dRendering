@@ -97,30 +97,6 @@ static inline void fillDepthTri(const tmx::ivec2& a, float za,
     }
 }
 
-// Simple Cohen–Sutherland clip for integer rectangle
-static inline bool clipLineRect(int x0,int y0,int x1,int y1, int rx0,int ry0,int rx1,int ry1,
-                                int& ox0,int& oy0,int& ox1,int& oy1)
-{
-    auto outcode = [&](int x,int y){
-        int c=0;
-        if(x<rx0) c|=1; else if(x>rx1) c|=2;
-        if(y<ry0) c|=4; else if(y>ry1) c|=8;
-        return c;
-    };
-    int c0=outcode(x0,y0), c1=outcode(x1,y1);
-    while(true){
-        if((c0|c1)==0){ ox0=x0; oy0=y0; ox1=x1; oy1=y1; return true; }
-        if((c0&c1)!=0) return false;
-        int c = c0? c0:c1;
-        int x=0,y=0;
-        if(c&8){ x = x0 + (x1-x0)*(ry1 - y0)/(y1 - y0); y = ry1; }
-        else if(c&4){ x = x0 + (x1-x0)*(ry0 - y0)/(y1 - y0); y = ry0; }
-        else if(c&2){ y = y0 + (y1-y0)*(rx1 - x0)/(x1 - x0); x = rx1; }
-        else        { y = y0 + (y1-y0)*(rx0 - x0)/(x1 - x0); x = rx0; }
-        if(c==c0){ x0=x; y0=y; c0=outcode(x0,y0); }
-        else     { x1=x; y1=y; c1=outcode(x1,y1); }
-    }
-}
 
 tmx::vec3 SketchApp::computeCenter(const std::vector<tmx::vec3>& v){
     if(v.empty()) return {0,0,0};
@@ -293,9 +269,8 @@ const std::vector<uint32_t>& SketchApp::render() {
                 if (!clipNearAndNDCToScreen(clip_[e.first], clip_[e.second], W_, H_, A, B))
                     continue;
 
-                int x0,y0,x1,y1;
-                if (clipLineRect(A.x, A.y, B.x, B.y, T.x0, T.y0, T.x1, T.y1, x0, y0, x1, y1))
-                    rast_.line({x0,y0}, {x1,y1}, {0,0,0,255});
+                // Draw the full segment once; overdraw from neighboring tiles is fine
+                rast_.line(A, B, {0,0,0,255});
             }
         }
     };

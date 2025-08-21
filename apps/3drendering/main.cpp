@@ -66,9 +66,6 @@ int main(int argc, char** argv){
 
     MeshLoader ml;
     if(!ml.loadOBJ(argv[1])){ qWarning("Failed to load OBJ"); return 2; }
-
-
-    // Build app
     SketchApp app(ml.positions, ml.edges, 1000, 1000);
     app.setThreads(std::max(1u, std::thread::hardware_concurrency()));
 

@@ -8,6 +8,7 @@
 #include "line_raster.hpp"
 #include "mesh_loader.hpp"
 
+struct RGBA;
 
 class SketchApp {
 public:
@@ -73,4 +74,6 @@ private:
     void clearDepth() { zbuf_.assign((size_t)W_*H_, 1.0f); }
 
     static tmx::vec3 computeCenter(const std::vector<tmx::vec3>& v);
+    std::vector<RGBA> vcolor_;  // per-vertex colors
+    void buildDefaultVertexColors();
 };

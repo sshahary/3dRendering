@@ -4,6 +4,7 @@
 #include <cstring>
 #include <thread>  
 #include "parallel.hpp"
+#include "projection.hpp"
 
 
 // --- Helper: clip against near plane (z + w >= 0) and NDC box, then map to screen ---
@@ -148,23 +149,6 @@ void SketchApp::dolly(float factor){
 }
 void SketchApp::resize(int W,int H){ W_=W; H_=H; vp_.resize(W,H); }
 
-// // --- math helpers (tiny, self-contained) ---
-// static inline tmx::vec3 cross3(const tmx::vec3& a, const tmx::vec3& b){
-//     return { a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x };
-// }
-// static inline float dot3(const tmx::vec3& a, const tmx::vec3& b){
-//     return a.x*b.x + a.y*b.y + a.z*b.z;
-// }
-// static inline tmx::vec3 norm3(const tmx::vec3& v){
-//     float L = std::sqrt(dot3(v,v)); return (L>0.f)? tmx::vec3{v.x/L, v.y/L, v.z/L} : tmx::vec3{0,0,1};
-// }
-// static inline tmx::vec3 xformPoint(const tmx::mat4& M, const tmx::vec3& p){
-//     tmx::vec4 v{p.x,p.y,p.z,1.f}; auto r = M * v; return {r.x,r.y,r.z};
-// }
-// static inline tmx::vec3 xformDir(const tmx::mat4& M, const tmx::vec3& v){
-//     tmx::vec4 w{v.x,v.y,v.z,0.f}; auto r = M * w; return tmx::vec3{r.x,r.y,r.z};
-// }
-
 // --- default vertex colors (from earlier step; keep yours if already added) ---
 static inline unsigned char clampU8(int v){ return (unsigned char)std::clamp(v,0,255); }
 void SketchApp::buildDefaultVertexColors(){
@@ -177,124 +161,35 @@ void SketchApp::buildDefaultVertexColors(){
     }
 }
 
-// // --- build unique-edge adjacency & dihedral-filtered feature edges ---
-// void SketchApp::buildAdjacencyAndFeatures(){
-//     if (!faces_ || faces_->empty()) return;
-
-//     // per-face normal + centroid (model space)
-//     const size_t Fn = faces_->size();
-//     face_normal_model_.assign(Fn, {0,0,1});
-//     face_centroid_model_.assign(Fn, {0,0,0});
-
-//     for (size_t fi=0; fi<Fn; ++fi){
-//         const auto& f = (*faces_)[fi];
-//         if (f.indices.size() < 3) continue;
-//         const tmx::vec3 p0 = pos_[f.indices[0]];
-//         const tmx::vec3 p1 = pos_[f.indices[1]];
-//         const tmx::vec3 p2 = pos_[f.indices[2]];
-//         face_normal_model_[fi] = norm3(cross3(p1-p0, p2-p0));
-
-//         // centroid
-//         tmx::vec3 c{0,0,0};
-//         for(int id : f.indices) { c.x+=pos_[id].x; c.y+=pos_[id].y; c.z+=pos_[id].z; }
-//         float inv = 1.0f / float(f.indices.size());
-//         face_centroid_model_[fi] = { c.x*inv, c.y*inv, c.z*inv };
-//     }
-
-//     // map normalized edge (min,max) -> unique-edge index
-//     std::unordered_map<uint64_t,int> map;
-//     map.reserve(edges_.size()*2);
-//     auto key = [](int a,int b)->uint64_t{ if(a>b) std::swap(a,b); return (uint64_t(uint32_t(a))<<32) | uint32_t(b); };
-
-//     uedges_.clear(); uedges_.reserve(edges_.size());
-
-//     for (size_t fi=0; fi<Fn; ++fi){
-//         const auto& f = (*faces_)[fi];
-//         const int n = int(f.indices.size());
-//         for (int k=0; k<n; ++k){
-//             int a = f.indices[k];
-//             int b = f.indices[(k+1)%n];
-//             uint64_t K = key(a,b);
-//             auto it = map.find(K);
-//             if (it == map.end()){
-//                 UE ue; ue.v0 = std::min(a,b); ue.v1 = std::max(a,b); ue.f0 = int(fi);
-//                 int idx = (int)uedges_.size(); map.emplace(K, idx); uedges_.push_back(ue);
-//             } else {
-//                 UE& ue = uedges_[it->second];
-//                 if (ue.f1 == -1) ue.f1 = int(fi);
-//             }
-//         }
-//     }
-
-//     // dihedral selection
-//     feature_edges_.clear(); feature_edges_.reserve(uedges_.size());
-//     const float cosThresh = std::cos(dihedral_thresh_deg_ * 3.1415926535f / 180.f); // keep when angle >= thresh
-//     for (const UE& ue : uedges_){
-//         if (ue.f1 == -1) { // boundary always kept
-//             feature_edges_.push_back({ue.v0, ue.v1});
-//         } else {
-//             const tmx::vec3 n0 = face_normal_model_[ue.f0];
-//             const tmx::vec3 n1 = face_normal_model_[ue.f1];
-//             float c = std::clamp(dot3(n0,n1), -1.0f, 1.0f);
-//             // angle = acos(c). Keep if angle >= thresh  ↔  c <= cos(thresh)
-//             if (c <= cosThresh) feature_edges_.push_back({ue.v0, ue.v1});
-//         }
-//     }
-
-//     rebuildFeatures_ = false;
-// }
-
-// // --- per-frame: decide which edges to draw (features + optional silhouettes) ---
-// void SketchApp::buildFrameEdges(const tmx::vec3& eye_world){
-//     frame_edges_.clear();
-
-//     const bool haveFaces = faces_ && !faces_->empty() && !uedges_.empty();
-
-//     // If needed (first time, or dihedral changed) rebuild feature list
-//     if (haveFaces && rebuildFeatures_) buildAdjacencyAndFeatures();
-
-//     // Start from feature edges if requested; otherwise all mesh edges
-//     if (haveFaces && use_feature_edges_only_) {
-//         frame_edges_ = feature_edges_;
-//     } else {
-//         frame_edges_ = edges_;
-//     }
-
-//     // Add silhouettes: edges whose two adjacent faces have opposite facing
-//     if (haveFaces && show_silhouette_) {
-//         // compute front/back per face in WORLD space
-//         face_front_.assign(faces_->size(), 0);
-//         tmx::vec3 eye = eye_world;
-
-//         // transform normals by M_ (direction only)
-//         tmx::vec3 n0w;
-//         for (size_t fi=0; fi<faces_->size(); ++fi){
-//             tmx::vec3 c = xformPoint(M_, face_centroid_model_[fi]);
-//             tmx::vec3 n = norm3(xformDir(M_, face_normal_model_[fi]));
-//             float s = dot3(n, eye - c);   // >0 means front-facing
-//             face_front_[fi] = (s > 0.f) ? 1 : 0;
-//         }
-
-//         for (const UE& ue : uedges_) {
-//             if (ue.f0 >= 0 && ue.f1 >= 0){
-//                 if (face_front_[ue.f0] ^ face_front_[ue.f1]) {
-//                     frame_edges_.push_back({ue.v0, ue.v1});
-//                 }
-//             }
-//         }
-//         // (optional) de-duplicate silhouettes added on top of features:
-//         std::sort(frame_edges_.begin(), frame_edges_.end(),
-//                   [](auto& A, auto& B){ return (A.first==B.first)? (A.second<B.second):(A.first<B.first); });
-//         frame_edges_.erase(std::unique(frame_edges_.begin(), frame_edges_.end()), frame_edges_.end());
-//     }
-// }
+void SketchApp::cycleVertexColors(){
+    ++color_seed_;
+    vcolor_.resize(pos_.size());
+    for (size_t i=0;i<pos_.size();++i){
+        // same hash but shifted by seed
+        uint32_t h = (uint32_t(i) + uint32_t(color_seed_)) * 2654435761u;
+        unsigned char r = (h>>16)&0xFF, g=(h>>8)&0xFF, b=h&0xFF;
+        r = clampU8(int(r)*3/2); g = clampU8(int(g)*3/2); b = clampU8(int(b)*3/2);
+        vcolor_[i] = RGBA{r,g,b,255};
+    }
+}
 
 const std::vector<uint32_t>& SketchApp::render() {
     // 0) projection this frame
     const float aspect = float(W_) / float(H_ ? H_ : 1);
-    P_ = tmx::perspective(60.f, aspect, 0.1f, 1000.f);
+    // P_ = tmx::perspective(60.f, aspect, 0.1f, 1000.f);
+    // pipe_.setProj(P_);
+    Projection proj;
+    if (useOrtho_) {
+        // Simple symmetric ortho sized by distance (tune scale as you like)
+        const float scale = dist_ * 0.6f;
+        const float l = -scale * aspect, r = scale * aspect;
+        const float b = -scale,           t = scale;
+        proj.setOrtho(l, r, b, t, 0.1f, 1000.f);
+    } else {
+        proj.setPerspective(60.f, aspect, 0.1f, 1000.f);
+    }
+    P_ = proj.matrix();
     pipe_.setProj(P_);
-
     // keep yaw bounded
     if (yaw_deg_ >  360.f) yaw_deg_ = std::fmod(yaw_deg_, 360.f);
     if (yaw_deg_ < -360.f) yaw_deg_ = std::fmod(yaw_deg_, 360.f);

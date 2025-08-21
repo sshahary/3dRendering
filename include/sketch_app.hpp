@@ -28,10 +28,14 @@ public:
     void setMinEdgePixels(float px)     { min_len_px_ = px < 0.f ? 0.f : px; }
     void setMaxEdgesPerFrame(size_t n)  { max_edges_ = n ? n : SIZE_MAX; }
 
+    void cycleVertexColors();
+    void setUseOrtho(bool v) { useOrtho_ = v; }
 private:
     // viewport
     int W_, H_;
 
+    bool useOrtho_   = false;
+    int  color_seed_ = 0;
     float yaw_deg_   = 0.f;
     float pitch_deg_ = 0.f;
     float dist_      = 6.f;
@@ -57,10 +61,6 @@ private:
     std::vector<float> z01_; // NDC depth in [0,1] (for depth compare)
     std::vector<tmx::ivec2> scr_;    // screen coords
     std::vector<uint8_t>    codes_;  // outcodes
-
-    // macro-grid overdraw limiter
-    std::vector<uint8_t> gridOcc_;
-    int gridW_ = 0, gridH_ = 0;
 
     // options
     int        edge_stride_ = 1;

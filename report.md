@@ -1,4 +1,3 @@
-```markdown
 # Report
 
 ## Overview
@@ -33,4 +32,3 @@ PNG output uses **QImage**.
 
 ## Design choices and C++ features
 The design aims for clarity: a reusable **renderer_core** library used by both apps; Qt covers windowing and PNG IO. The code uses RAII, small value-type math structs, `std::vector` everywhere, lambdas, and **multithreading** via `std::thread`. This keeps the implementation compact, portable, and easy to test. Future work could add MSAA, proper hidden-line removal for all edges, and more robust face handling.
-```

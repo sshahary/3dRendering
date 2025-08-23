@@ -1,34 +1,49 @@
-# Report
+# Report — 3D Wireframe Renderer
 
-## Overview
-This project is a small 3D **wireframe renderer** for Wavefront OBJ files with two front-ends:
-- **render-gui**: an interactive Qt6 viewer.
-- **render-to-file**: a command-line tool that saves a PNG from a given camera.
+**Author:** _[Your Name]_  
+**Date:** _[Today’s Date]_
 
-When a model is loaded, its geometric center is translated to the origin `(0,0,0)` so the object is placed at the origin as required.
+**Abstract —** This project implements a modular, CPU-based **wireframe renderer** for Wavefront OBJ models with two front-ends: an interactive Qt GUI and a command-line tool that renders to PNG from a specified camera. The report follows a concise, sectioned layout similar to a peer example for clarity. :contentReference[oaicite:0]{index=0}
 
-## Renderer core
-The core follows a simple graphics pipeline. The **model** matrix recenters the mesh. The **view** matrix comes either from an orbit camera (yaw, pitch, distance) or from explicit camera coordinates; both look at the origin with +Y up. The **projection** can be **perspective** or **orthographic**.
+---
 
-Vertices are transformed to clip space, checked against the **near plane** (`z + w ≥ 0`), divided by `w`, and edges are clipped to the NDC box `[-1,1]^2` using a Liang–Barsky style routine. NDC is mapped to pixels via a viewport transform.
+## 1. Core Renderer Implementation
+The renderer is organized into small, reusable C++ components:
 
-For visibility, the renderer keeps a screen-space **z-buffer**. Faces (if provided) can be conservatively depth-filled first, then edges are drawn with a per-pixel depth test so hidden lines are suppressed. Lines support **per-vertex color gradients** or **monochrome** (black on white) for print-style output.
+- **TinyMath:** Lightweight vector/matrix types and helpers used across the pipeline.
+- **OBJ Loader:** Parses positions/indices and extracts a deduplicated edge list. On load, the mesh is **recentered** so its geometric center maps to `(0,0,0)`.
+- **Pipeline (MVP):** Model translates to origin; View derives from either **orbit** (yaw, pitch, distance) or **explicit camera** coordinates; Projection supports **perspective** and **orthographic**.
+- **Clipping & Mapping:** Per-vertex clip-space transform, **near-plane** check (`z + w ≥ 0`), divide by `w`, then Liang–Barsky style clipping to the **NDC** box `[-1,1]^2` and viewport mapping to pixels.
+- **Rasterizer:** Tiled, multi-threaded line drawing (Bresenham-style) with **per-vertex color gradients** and a screen-space **z-buffer**. Optional conservative triangle depth fill improves hidden-line behavior. A **monochrome** mode draws black lines on white for print-friendly output.
 
-To stay responsive, the screen is split into tiles (e.g., 64×64). Each tile is processed in parallel with `std::thread`, which reduces contention and avoids seam artifacts.
+---
 
-## GUI and CLI
-The GUI is a Qt `QWidget` that renders on `paintEvent`. Controls:
-- Mouse drag: **orbit**, wheel: **dolly**
-- **O**: perspective/orthographic, **B**: monochrome toggle
-- **Space**: cycle vertex colors, **C**: enter camera `(x,y,z)`
+## 2. GUI Architecture
+The GUI is a compact **Qt6** application (`QWidget`) that asks the core to render during `paintEvent`. Input handling provides:
+- **Orbit** (mouse drag) and **dolly** (wheel/trackpad)
+- Toggles: **O** (projection), **B** (monochrome), **Space** (cycle colors)
+- **C** prompts to set camera `(x, y, z)` directly
 
-The CLI reuses the same core:
+This separation—controls in the widget, rendering in the core—keeps the codebase maintainable and testable. :contentReference[oaicite:1]{index=1}
+
+---
+
+## 3. Exporting Rendered Images
+The CLI front-end reuses the same core and writes PNGs via **Qt’s `QImage`**:
 ```
 
 render-to-file \<input.obj> <cx> <cy> <cz> \<perspective|orthographic> \<output.png> \[-b|--black]
 
 ```
-PNG output uses **QImage**.
+Environment variables `RTF_WIDTH/RTF_HEIGHT` allow custom output sizes.
 
-## Design choices and C++ features
-The design aims for clarity: a reusable **renderer_core** library used by both apps; Qt covers windowing and PNG IO. The code uses RAII, small value-type math structs, `std::vector` everywhere, lambdas, and **multithreading** via `std::thread`. This keeps the implementation compact, portable, and easy to test. Future work could add MSAA, proper hidden-line removal for all edges, and more robust face handling.
+---
+
+## 4. Software Design & C++ Features
+- **Modularity:** A single **renderer_core** library powers both executables; UI and rendering stay decoupled for flexibility. :contentReference[oaicite:2]{index=2}  
+- **Determinism & Simplicity:** NDC-space clipping and orthographic mode simplify testing and behavior.
+- **Performance:** Coarse **tiling** plus `std::thread` parallelism scales on multi-core CPUs; contiguous pixel/z buffers aid cache locality.
+- **C++ Practices:** RAII, const-correct value types, `std::vector` throughout, lambdas for worker tasks, and clear compile flags (`-Wall -Wextra`, optional `-Werror`).  
+- **Tooling:** CMake builds both apps; tests (Catch2) validate core behavior; `clang-format` keeps style consistent.
+
+_This structure delivers a compact, portable renderer that meets the assignment requirements while remaining easy to extend (e.g., MSAA, stronger hidden-line removal, alternative image backends)._

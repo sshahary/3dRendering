@@ -4,7 +4,7 @@ CONFIG ?= Release
 ASAN ?= OFF
 
 BIN_GUI := render-gui
-BIN_CLI := render-to-file
+BIN_CLI := render-to-file core_tests
 BIN_PATHS := ./$(BIN_GUI) ./$(BIN_CLI) \
              $(BUILD_DIR)/$(BIN_GUI) $(BUILD_DIR)/$(BIN_CLI) \
              $(BUILD_DIR)/$(CONFIG)/$(BIN_GUI) $(BUILD_DIR)/$(CONFIG)/$(BIN_CLI)

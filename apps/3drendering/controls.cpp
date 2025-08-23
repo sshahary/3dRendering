@@ -4,6 +4,7 @@
 #include <QMouseEvent>
 #include <QWheelEvent>
 #include <QKeyEvent>
+#include <QInputDialog>
 #include <cmath>
 #include "../include/sketch_app.hpp"
 
@@ -72,6 +73,18 @@ void SketchWidget::keyPressEvent(QKeyEvent* e) {
     if (e->key() == Qt::Key_O) {
         ortho_ = !ortho_;
         app_->setUseOrtho(ortho_);
+        update();
+        return;
+    }
+    if (e->key() == Qt::Key_C) {
+        bool okX, okY, okZ;
+        double x = QInputDialog::getDouble(this, "Camera X", "x:", -4.0, -1e6, 1e6, 2, &okX);
+        if (!okX) return;
+        double y = QInputDialog::getDouble(this, "Camera Y", "y:", -3.0, -1e6, 1e6, 2, &okY);
+        if (!okY) return;
+        double z = QInputDialog::getDouble(this, "Camera Z", "z:",  2.0, -1e6, 1e6, 2, &okZ);
+        if (!okZ) return;
+        app_->setCameraPosition(float(x), float(y), float(z)); // see step 4
         update();
         return;
     }

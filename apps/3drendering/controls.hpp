@@ -1,5 +1,6 @@
 #pragma once
 #include <QWidget>
+#include <QPoint>
 
 class SketchApp;
 
@@ -19,7 +20,7 @@ protected:
 
 private:
     SketchApp* app_;
-    bool   drag_ = false;
-    bool   ortho_ = false;   // local toggle, no getter needed in SketchApp
+    bool drag_ = false;
     QPoint last_;
+    bool ortho_ = false;
 };

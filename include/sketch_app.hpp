@@ -7,6 +7,7 @@
 #include "viewport.hpp"
 #include "line_raster.hpp"
 #include "mesh_loader.hpp"
+#include "camera.hpp"
 
 struct RGBA;
 
@@ -30,6 +31,12 @@ public:
 
     void cycleVertexColors();
     void setUseOrtho(bool v) { useOrtho_ = v; }
+    void setCameraPosition(float x, float y, float z);
+    void clearExplicitCamera();                        // return to orbit mode
+
+    // hidden-line
+    void setFaces(const std::vector<PolyFace>& f) { faces_ = &f; }
+    void clearFaces() { faces_ = nullptr; }
 private:
     // viewport
     int W_, H_;
@@ -48,6 +55,10 @@ private:
     Pipeline3D pipe_;
     Viewport   vp_;
     LineRaster rast_;
+
+    Camera camera_;
+    bool explicit_cam_ = false;
+    tmx::vec3 cam_pos_{0.f, 0.f, 5.f};
 
     // output ARGB
     std::vector<uint32_t> out_;

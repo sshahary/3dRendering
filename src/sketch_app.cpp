@@ -137,16 +137,28 @@ SketchApp::SketchApp(const std::vector<tmx::vec3>& positions,
 
 
 void SketchApp::orbit(float dx, float dy){
+    explicit_cam_ = false; 
     yaw_deg_   += dx;
     pitch_deg_ += dy;
     if (pitch_deg_ >  179.0f) pitch_deg_ =  179.0f;
     if (pitch_deg_ < -179.0f) pitch_deg_ = -179.0f;
 }
 void SketchApp::dolly(float factor){
+    explicit_cam_ = false; 
     dist_ *= factor;
     if(dist_<0.2f) dist_=0.2f;
     if(dist_>2000.f) dist_=2000.f;
 }
+
+void SketchApp::setCameraPosition(float x, float y, float z) {
+    explicit_cam_ = true;
+    cam_pos_ = {x, y, z};
+}
+
+void SketchApp::clearExplicitCamera() {
+    explicit_cam_ = false;
+}
+
 void SketchApp::resize(int W,int H){ W_=W; H_=H; vp_.resize(W,H); }
 
 // --- default vertex colors (from earlier step; keep yours if already added) ---
@@ -194,17 +206,39 @@ const std::vector<uint32_t>& SketchApp::render() {
     if (yaw_deg_ >  360.f) yaw_deg_ = std::fmod(yaw_deg_, 360.f);
     if (yaw_deg_ < -360.f) yaw_deg_ = std::fmod(yaw_deg_, 360.f);
 
-    // 1) build view from orbit params
-    auto d2r = [](float d){ return d * 3.1415926535f / 180.0f; };
-    const float cy = d2r(yaw_deg_);
-    const float cp = d2r(pitch_deg_);
-    const tmx::vec3 eye{
-        std::cos(cp) * std::cos(cy) * dist_,
-        std::sin(cp) * dist_,
-        std::cos(cp) * std::sin(cy) * dist_
-    };
-    const tmx::vec3 up = (std::cos(cp) >= 0.0f) ? tmx::vec3{0,1,0} : tmx::vec3{0,-1,0};
-    V_ = tmx::lookAt(eye, tmx::vec3{0,0,0}, up);
+    // // 1) build view from orbit params
+    // auto d2r = [](float d){ return d * 3.1415926535f / 180.0f; };
+    // const float cy = d2r(yaw_deg_);
+    // const float cp = d2r(pitch_deg_);
+    // const tmx::vec3 eye{
+    //     std::cos(cp) * std::cos(cy) * dist_,
+    //     std::sin(cp) * dist_,
+    //     std::cos(cp) * std::sin(cy) * dist_
+    // };
+    // const tmx::vec3 up = (std::cos(cp) >= 0.0f) ? tmx::vec3{0,1,0} : tmx::vec3{0,-1,0};
+    // V_ = tmx::lookAt(eye, tmx::vec3{0,0,0}, up);
+    // pipe_.setView(V_);
+    // pipe_.setModel(M_);
+
+    if (explicit_cam_) {
+        // exact camera from CLI or typed input, look at origin
+        camera_.setLookAt(cam_pos_, tmx::vec3{0,0,0}, tmx::vec3{0,1,0});
+    } else {
+        // orbit camera
+        auto d2r = [](float d){ return d * 3.1415926535f / 180.0f; };
+        const float cy = d2r(yaw_deg_);
+        const float cp = d2r(pitch_deg_);
+        const tmx::vec3 eye{
+            std::cos(cp) * std::cos(cy) * dist_,
+            std::sin(cp) * dist_,
+            std::cos(cp) * std::sin(cy) * dist_
+        };
+        const tmx::vec3 up = (std::cos(cp) >= 0.0f) ? tmx::vec3{0,1,0} : tmx::vec3{0,-1,0};
+        camera_.setLookAt(eye, tmx::vec3{0,0,0}, up);
+    }
+    
+    // use the camera view matrix
+    V_ = camera_.view();
     pipe_.setView(V_);
     pipe_.setModel(M_);
 

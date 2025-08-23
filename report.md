@@ -3,7 +3,7 @@
 **Author:** Shaharyar  
 **Date:** 23.08.2025
 
-**Abstract —** This project implements a modular, CPU-based **wireframe renderer** for Wavefront OBJ models with two front-ends: an interactive Qt GUI and a command-line tool that renders to PNG from a specified camera. The report follows a concise, sectioned layout similar to a peer example for clarity. :contentReference[oaicite:0]{index=0}
+**Abstract —** This project implements a modular, CPU-based **wireframe renderer** for Wavefront OBJ models with two front-ends: an interactive Qt GUI and a command-line tool that renders to PNG from a specified camera. The report follows a concise, sectioned layout similar to a peer example for clarity.
 
 ---
 
@@ -24,7 +24,7 @@ The GUI is a compact **Qt6** application (`QWidget`) that asks the core to rende
 - Toggles: **O** (projection), **B** (monochrome), **Space** (cycle colors)
 - **C** prompts to set camera `(x, y, z)` directly
 
-This separation—controls in the widget, rendering in the core—keeps the codebase maintainable and testable. :contentReference[oaicite:1]{index=1}
+This separation—controls in the widget, rendering in the core—keeps the codebase maintainable and testable.
 
 ---
 
@@ -40,7 +40,7 @@ Environment variables `RTF_WIDTH/RTF_HEIGHT` allow custom output sizes.
 ---
 
 ## 4. Software Design & C++ Features
-- **Modularity:** A single **renderer_core** library powers both executables; UI and rendering stay decoupled for flexibility. :contentReference[oaicite:2]{index=2}  
+- **Modularity:** A single **renderer_core** library powers both executables; UI and rendering stay decoupled for flexibility.
 - **Determinism & Simplicity:** NDC-space clipping and orthographic mode simplify testing and behavior.
 - **Performance:** Coarse **tiling** plus `std::thread` parallelism scales on multi-core CPUs; contiguous pixel/z buffers aid cache locality.
 - **C++ Practices:** RAII, const-correct value types, `std::vector` throughout, lambdas for worker tasks, and clear compile flags (`-Wall -Wextra`, optional `-Werror`).  

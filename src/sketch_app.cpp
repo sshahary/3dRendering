@@ -185,6 +185,10 @@ void SketchApp::cycleVertexColors(){
     }
 }
 
+void SketchApp::setMonochrome(bool on) { mono_ = on; }
+void SketchApp::toggleMonochrome() { mono_ = !mono_; }
+
+
 const std::vector<uint32_t>& SketchApp::render() {
     // 0) projection this frame
     const float aspect = float(W_) / float(H_ ? H_ : 1);
@@ -205,20 +209,6 @@ const std::vector<uint32_t>& SketchApp::render() {
     // keep yaw bounded
     if (yaw_deg_ >  360.f) yaw_deg_ = std::fmod(yaw_deg_, 360.f);
     if (yaw_deg_ < -360.f) yaw_deg_ = std::fmod(yaw_deg_, 360.f);
-
-    // // 1) build view from orbit params
-    // auto d2r = [](float d){ return d * 3.1415926535f / 180.0f; };
-    // const float cy = d2r(yaw_deg_);
-    // const float cp = d2r(pitch_deg_);
-    // const tmx::vec3 eye{
-    //     std::cos(cp) * std::cos(cy) * dist_,
-    //     std::sin(cp) * dist_,
-    //     std::cos(cp) * std::sin(cy) * dist_
-    // };
-    // const tmx::vec3 up = (std::cos(cp) >= 0.0f) ? tmx::vec3{0,1,0} : tmx::vec3{0,-1,0};
-    // V_ = tmx::lookAt(eye, tmx::vec3{0,0,0}, up);
-    // pipe_.setView(V_);
-    // pipe_.setModel(M_);
 
     if (explicit_cam_) {
         // exact camera from CLI or typed input, look at origin
@@ -328,8 +318,8 @@ const std::vector<uint32_t>& SketchApp::render() {
                 if (!clipNearAndNDCToScreen(clip_[e.first], clip_[e.second], W_, H_, A, B))
                     continue;
 
-                const RGBA ca = vcolor_[e.first];
-                const RGBA cb = vcolor_[e.second];
+                const RGBA ca = mono_ ? RGBA{0,0,0,255} : vcolor_[e.first];
+                const RGBA cb = mono_ ? RGBA{0,0,0,255} : vcolor_[e.second];
                 const float za = z01_[e.first];
                 const float zb = z01_[e.second];
 

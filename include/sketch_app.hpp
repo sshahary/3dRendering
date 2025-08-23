@@ -32,7 +32,9 @@ public:
     void cycleVertexColors();
     void setUseOrtho(bool v) { useOrtho_ = v; }
     void setCameraPosition(float x, float y, float z);
-    void clearExplicitCamera();                        // return to orbit mode
+    void clearExplicitCamera();
+    void setMonochrome(bool on);
+    void toggleMonochrome();
 
     // hidden-line
     void setFaces(const std::vector<PolyFace>& f) { faces_ = &f; }
@@ -46,6 +48,8 @@ private:
     float yaw_deg_   = 0.f;
     float pitch_deg_ = 0.f;
     float dist_      = 6.f;
+
+    bool mono_ = false;
 
     // model center
     tmx::vec3 center_{};

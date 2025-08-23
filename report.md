@@ -1,7 +1,7 @@
 # Report — 3D Wireframe Renderer
 
-**Author:** _[Your Name]_  
-**Date:** _[Today’s Date]_
+**Author:** Shaharyar  
+**Date:** 23.08.2025
 
 **Abstract —** This project implements a modular, CPU-based **wireframe renderer** for Wavefront OBJ models with two front-ends: an interactive Qt GUI and a command-line tool that renders to PNG from a specified camera. The report follows a concise, sectioned layout similar to a peer example for clarity. :contentReference[oaicite:0]{index=0}
 

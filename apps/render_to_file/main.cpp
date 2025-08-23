@@ -5,7 +5,6 @@
 #include <iostream>
 #include <algorithm>
 #include <cstring>
-
 #include <QImage>
 #include <QColorSpace>
 
@@ -15,9 +14,15 @@
 static void usage() {
     std::cerr <<
     "Usage:\n"
-    "  render-to-file <input.obj> <cam_x> <cam_y> <cam_z> <perspective|orthographic> <output.png>\n"
-    "Example:\n"
-    "  render-to-file input.obj -4 -3 2 perspective output.png\n";
+    "  render-to-file <input.obj> <cam_x> <cam_y> <cam_z> <perspective|orthographic> <output.png> [-b|--black]\n"
+    "\n"
+    "Color vs black:\n"
+    "  • Default (no -b/--black): render in color.\n"
+    "  • With -b or --black: render in monochrome (black lines on white).\n"
+    "\n"
+    "Examples:\n"
+    "  render-to-file input.obj -4 -3 2 perspective out.png          # color\n"
+    "  render-to-file input.obj -4 -3 2 perspective out.png -b       # black\n";
 }
 
 static bool save_png_argb32(const std::string& path, int W, int H, const std::vector<uint32_t>& argb)
@@ -32,7 +37,14 @@ static bool save_png_argb32(const std::string& path, int W, int H, const std::ve
 
 int main(int argc, char** argv)
 {
-    if (argc != 7) { usage(); return 1; }
+    bool mono = false;
+    if (argc == 8) {
+        std::string f = argv[7];
+        if (f == "-b" || f == "--black") mono = true;
+        else { usage(); return 1; }
+    } else if (argc != 7) {
+        usage(); return 1;
+    }
     const std::string inObj = argv[1];
     const float camX = std::strtof(argv[2], nullptr);
     const float camY = std::strtof(argv[3], nullptr);
@@ -59,6 +71,7 @@ int main(int argc, char** argv)
     SketchApp app(ml.positions, ml.edges, W, H);
     app.setUseOrtho(useOrtho);
     app.setCameraPosition(camX, camY, camZ);
+    app.setMonochrome(mono); 
 
     const auto& pixels = app.render();
     if (!save_png_argb32(outPng, W, H, pixels)) {

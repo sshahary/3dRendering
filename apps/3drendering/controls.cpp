@@ -70,6 +70,11 @@ void SketchWidget::keyPressEvent(QKeyEvent* e) {
         update();
         return;
     }
+    if (e->key() == Qt::Key_B) {
+        app_->toggleMonochrome();
+        update();
+        return;
+    }
     if (e->key() == Qt::Key_O) {
         ortho_ = !ortho_;
         app_->setUseOrtho(ortho_);

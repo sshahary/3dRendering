@@ -41,6 +41,10 @@ run: build
 	  echo "Usage: make run OBJ=path/to/model.obj"; exit 1; \
 	fi
 
+format:
+	@command -v clang-format >/dev/null || { echo "clang-format not found"; exit 1; }
+	@find src include apps -name '*.cpp' -o -name '*.hpp' -o -name '*.h' | xargs clang-format -i
+
 debug:
 	@$(MAKE) CONFIG=Debug ASAN=$(ASAN) build
 

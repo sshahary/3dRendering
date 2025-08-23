@@ -1,12 +1,13 @@
 #pragma once
-#include <vector>
 #include "tinymath.hpp"
+#include <vector>
 
 class Viewport {
 public:
-    Viewport(int w,int h);
-    void resize(int w,int h);
-    std::vector<tmx::ivec2> toScreen(const std::vector<tmx::vec4>& ndc) const;
+  Viewport(int w, int h);
+  void resize(int w, int h);
+  std::vector<tmx::ivec2> toScreen(const std::vector<tmx::vec4> &ndc) const;
+
 private:
-    int w_, h_;
+  int w_, h_;
 };

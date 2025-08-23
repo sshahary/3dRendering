@@ -4,6 +4,30 @@ project(3dwireframe LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# tests
+include(CTest)                 # defines BUILD_TESTING ON by default
+
+if (BUILD_TESTING)
+  find_package(Catch2 3 QUIET) # try system Catch2 first
+  if (NOT Catch2_FOUND)
+    message(STATUS "Catch2 not found locally, fetching it")
+    include(FetchContent)
+    FetchContent_Declare(
+      Catch2
+      GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+      GIT_TAG v3.5.3    # any v3 tag is fine
+    )
+    FetchContent_MakeAvailable(Catch2)
+  endif()
+
+  add_executable(core_tests tests/core_tests.cpp)
+  target_link_libraries(core_tests PRIVATE renderer_core Catch2::Catch2WithMain)
+  target_include_directories(core_tests PRIVATE ${CMAKE_SOURCE_DIR}/include)
+
+  include(Catch)
+  catch_discover_tests(core_tests)
+endif()
+
 # Qt (needed: Widgets for GUI, Gui for QImage PNG in CLI)
 set(CMAKE_AUTOMOC ON)
 find_package(Qt6 REQUIRED COMPONENTS Widgets Gui)

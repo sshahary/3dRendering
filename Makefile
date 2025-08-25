@@ -48,7 +48,7 @@ run: build
 
 format:
 	@command -v clang-format >/dev/null || { echo "clang-format not found"; exit 1; }
-	@find src include apps \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) | xargs clang-format -i
+	@find src include apps tests \( -name '*.cpp' -o -name '*.hpp' -o -name '*.h' \) | xargs clang-format -i
 
 debug:
 	@$(MAKE) CONFIG=Debug ASAN=$(ASAN) build

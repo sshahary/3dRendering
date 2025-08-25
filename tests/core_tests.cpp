@@ -32,7 +32,7 @@ TEST_CASE("Monochrome mode draws black pixels", "[render]") {
     const auto& img = app.render();
     bool saw_black = false;
     for (auto p : img) {
-        if (p == 0xFF000000u) { saw_black = true; break; } // exact black ARGB
+        if (p == 0xFF000000u) { saw_black = true; break; }
     }
     REQUIRE(saw_black);
 }
